@@ -13,14 +13,19 @@ const { NativeEmbeddingReranker } = require("../../EmbeddingRerankers/native");
  */
 
 const LanceDb = {
-  uri: `${
-    !!process.env.STORAGE_DIR ? `${process.env.STORAGE_DIR}/` : "./storage/"
-  }lancedb`,
-  name: "LanceDb",
-
+    uri: `az://${process.env.AZURE_CONTAINER_NAME || 'anythingllm-vectors'}/${process.env.AZURE_DATABASE_NAME || 'lancedb'}`,
+    name: "LanceDB",
+  
   /** @returns {Promise<{client: LanceClient}>} */
   connect: async function () {
-    const client = await lancedb.connect(this.uri);
+    if (process.env.VECTOR_DB !== "lancedb") throw new Error("LanceDB::Invalid ENV settings");
+    
+    const storageOptions = {
+      accountName: process.env.AZURE_STORAGE_ACCOUNT_NAME,
+      accountKey: process.env.AZURE_STORAGE_ACCOUNT_KEY
+    };
+    
+    const client = await lancedb.connect(this.uri, { storageOptions });
     return { client };
   },
   distanceToSimilarity: function (distance = null) {
